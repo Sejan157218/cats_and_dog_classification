@@ -1,0 +1,12 @@
+pandas
+seaborn
+numpy
+matplotlip
+scikit-learn
+catboost
+xgboost
+dill
+Django==4.1
+python-dotenv==1.0.0
+tensorflow
+-e .
