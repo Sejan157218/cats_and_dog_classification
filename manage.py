@@ -5,6 +5,7 @@ import sys
 import dotenv
 import pathlib
 
+
 def main():
     """Run administrative tasks."""
 
@@ -14,7 +15,7 @@ def main():
     else:
         print("## environment variable path not found ##")
 
-    os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'pridictMathScore.settings')
+    os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'CatsAndDogsClassifier.settings')
     try:
         from django.core.management import execute_from_command_line
     except ImportError as exc:
@@ -24,7 +25,6 @@ def main():
             "forget to activate a virtual environment?"
         ) from exc
     execute_from_command_line(sys.argv)
-
 
 if __name__ == '__main__':
     main()

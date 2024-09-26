@@ -1,65 +1,32 @@
-import os
-import sys
-
+import tensorflow as tf
 import numpy as np
-import pandas as pd
-import pickle
-
-from src.exception import CustomException
-
-from sklearn.metrics import r2_score
-from sklearn.model_selection import GridSearchCV
+from tensorflow.keras.preprocessing import image
+import os
+from PIL import Image
 
 
+def load_and_preprocess_image(image):
+    # image = Image.open(image)
+    # image  = np.array(image)
+    # resized_image = tf.image.resize(image, [224, 224])
+    # # img_array = image.img_to_array(resized_image)
+    # img_array = np.expand_dims(img_array, axis=0)
+    # img_array /= 255.0  # Rescale the image as per the training data preprocessing
+    # return img_array
 
-def save_object(file_path, obj):
-    try:
-        dir_path = os.path.dirname(file_path)
+    image = Image.open(image)
+    image  = np.array(image)
+    resized_image = tf.image.resize(image, [224, 224])  # Example size, adjust as needed
+    normalized_image = resized_image / 255.0  # Normalize pixel values
+    input_image = tf.expand_dims(normalized_image, 0)  # Add batch dimension
+    return input_image
 
-        os.makedirs(dir_path, exist_ok=True)
-        with open(file_path, "wb") as file_obj:
-            pickle.dump(obj, file_obj)
-    except Exception as E:
-        raise CustomException(E, sys)
-    
-
-
-def evaluate_models(X_train, y_train, X_test, y_test, models, param):
-    try:
-        report = {}
-
-        for i in range(len(models)):
-            model = list(models.values())[i]
-            para = param[list(models.keys())[i]]
-
-            gs = GridSearchCV(model,para,cv=3)
-            gs.fit(X_train,y_train)
-
-            model.set_params(**gs.best_params_)
-            model.fit(X_train,y_train)
-
-            # model.fit(X_train, y_train)
-
-            y_train_pred = model.predict(X_train)
-
-            y_test_pred = model.predict(X_test)
-
-            train_model_score = r2_score(y_train, y_train_pred)
-
-            test_model_score = r2_score(y_test, y_test_pred)
-
-            report[list(models.keys())[i]] = test_model_score
-
-        return report
-    except Exception as E:
-        raise CustomException(E, sys)
+def predict_image(model, img_array):
+    prediction = model.predict(img_array)
+    return prediction
 
 
 
-def load_object(file_path):
-    try:
-        with open(file_path, "rb") as file_obj:
-            return pickle.load(file_obj)
 
-    except Exception as e:
-        raise CustomException(e, sys)
+
+

@@ -14,7 +14,7 @@ from src.logger import logging
 from src.utils import save_object
 import os
 
-from tensorflow.keras.preprocessing.image import ImageDataGenerator, array_to_img, img_to_array, load_img
+from tensorflow.keras.preprocessing.image import ImageDataGenerator
 
 
 @dataclass
@@ -36,53 +36,43 @@ class DataTransformaion:
 
         """
         try:
-            # Set up the directory for saving augmented images
-            save_dir = 'augmented_images'
-            os.makedirs(save_dir, exist_ok=True)
+            # Define directories
+            train_dir = 'artifacts/train'
+            validation_dir = 'artifacts/validation'
 
-            # Create the ImageDataGenerator with augmentation options
+            # Data augmentation and rescaling for training
             train_datagen = ImageDataGenerator(
-            rescale=1./255,
-            rotation_range=0.2,
-            zoom_range=0.2,
-            horizontal_flip=True,
-            # save_to_dir=save_dir,  # Directory to save augmented images
-            # save_prefix='aug',    # Prefix for saved images
-            # save_format='jpeg'    # Format to save images
+                rescale=1./255,
+                rotation_range=40,
+                width_shift_range=0.2,
+                height_shift_range=0.2,
+                shear_range=0.2,
+                zoom_range=0.2,
+                horizontal_flip=True,
+                fill_mode='nearest'
             )
 
-            # Create a data generator
+            # Only rescaling for validation
+            validation_datagen = ImageDataGenerator(rescale=1./255)
+
+            # Create data generators
             train_generator = train_datagen.flow_from_directory(
-                'artifacts/training_set', 
-                target_size=(224, 224), 
-                batch_size=32, 
-                class_mode='binary',
-                # save_to_dir=save_dir,
-                # save_prefix='aug',
-                )
+                train_dir,
+                target_size=(224, 224),
+                batch_size=20,
+                class_mode='binary'
+            )
 
-            test_datagen = ImageDataGenerator(rescale = 1./255)
-            test_generator = test_datagen.flow_from_directory('artifacts/test_set',
-                                                        target_size = (224, 224),
-                                                        batch_size = 32,
-                                                        class_mode = 'binary')
-
-            # Generate a few batches of augmented images and save them
-            # num_batches = 10  # Number of batches to generate and save
-            # for i in range(num_batches):
-            #     batch = next(train_generator)
-
-            # logging.info(f"Saved preprocessing object . ")
-
-            # save_object(
-            #     file_path = self.data_transformation_config.preprocessor_obj_file_path,
-            #     obj = preprocessing_obj
-            # )
+            validation_generator = validation_datagen.flow_from_directory(
+                validation_dir,
+                target_size=(224, 224),
+                batch_size=20,
+                class_mode='binary'
+            )
 
             return (
                 train_generator,
-                test_generator,
-                self.data_transformation_config.preprocessor_obj_file_path,
+                validation_generator
             )
 
 
@@ -91,6 +81,6 @@ class DataTransformaion:
 
 
 
-if __name__=="__main__":
-    obj = DataTransformaion()
-    data= obj.get_data_transformer_object()   
+# if __name__=="__main__":
+#     obj = DataTransformaion()
+#     data= obj.get_data_transformer_object()   

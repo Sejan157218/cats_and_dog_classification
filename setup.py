@@ -18,7 +18,7 @@ def get_requirements(file_path:str)->List[str]:
     return requirements
 
 setup(
-    name='mlproject',
+    name='CatsAndDogsClassifier',
     version='0.0.1',
     author='sejan',
     author_email='',

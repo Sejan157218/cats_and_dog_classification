@@ -1,71 +1,74 @@
 import os
 import sys
-from dataclasses import dataclass
-import tensorflow as tf
-from sklearn.metrics import r2_score
-
-
-from src.exception import CustomException
 from src.logger import logging
-from src.utils import evaluate_models, save_object
+from src.utils import save_object
+from src.exception import CustomException
+import tensorflow as tf
+from tensorflow.keras.models import Sequential
+from tensorflow.keras.layers import Dense,Conv2D,MaxPooling2D,Flatten,BatchNormalization,Dropout
+from tensorflow.keras.optimizers import Adam
+from tensorflow.keras.callbacks import EarlyStopping
 
-@dataclass
+
 class ModeltrainerConfig:
-    trained_model_file_path = os.path.join("artifacts", "model.pkl")
+    trained_model_file_path = os.path.join("artifacts", "c_a_d_classifier.h5")
     
 
 class ModelTrainer:
     def __init__(self):
         self.model_trainer_config = ModeltrainerConfig()
     
-    def initiate_model_trainer(self, training_set, test_set):
-        print(training_set,test_set)
+    def initiate_model_trainer(self, train_generator, validation_generator):
+        print("model train start")
         try:
-            logging.info("split training and test input data")
+            # Check TensorFlow version and GPU availability
+            print(tf.__version__)
+            print("Num GPUs Available: ", len(tf.config.experimental.list_physical_devices('GPU')))
 
-            cnn_base = tf.keras.applications.VGG16(
-                        include_top=True,
-                        weights="imagenet",
-                        input_shape=(224, 224, 3),
-                        pooling=None,
-                        classes=1000,
-                        classifier_activation="softmax",
-                    )
+                        
+            model = Sequential()
 
-            cnn = tf.keras.models.Sequential()
-            cnn.add(cnn_base)
-            # cnn.add(tf.keras.layers.Conv2D(filters=32, kernel_size=3, activation='relu', input_shape=[224, 224, 3]))
-            
-            # cnn.add(tf.keras.layers.MaxPool2D(pool_size=2, strides=2))
+            model.add(Conv2D(32,kernel_size=(3,3),padding='valid',activation='relu',input_shape=(224,224,3)))
 
-            # cnn.add(tf.keras.layers.Conv2D(filters=32, kernel_size=3, activation='relu'))
+            model.add(MaxPooling2D(pool_size=(2,2),strides=2,padding='valid'))
 
-            # cnn.add(tf.keras.layers.MaxPool2D(pool_size=2, strides=2))
+            model.add(Conv2D(64,kernel_size=(3,3),padding='valid',activation='relu'))
 
-            cnn.add(tf.keras.layers.Flatten())
+            model.add(MaxPooling2D(pool_size=(2,2),strides=2,padding='valid'))
 
-            cnn.add(tf.keras.layers.Dense(units=128, activation='relu'))
+            model.add(Conv2D(128,kernel_size=(3,3),padding='valid',activation='relu'))
 
-            cnn.add(tf.keras.layers.Dense(units=64, activation='relu'))
+            model.add(MaxPooling2D(pool_size=(2,2),strides=2,padding='valid'))
 
-            cnn.add(tf.keras.layers.Dense(units=1, activation='sigmoid'))
+            model.add(Flatten())
 
-            cnn_base.trainable = False
-            cnn.compile(optimizer = 'adam', loss = 'binary_crossentropy', metrics = ['accuracy'])
+            model.add(Dense(256,activation='relu'))
 
-            model = cnn.fit(x = training_set, validation_data = test_set, epochs = 1)
-            logging.info(f"Best found mode on both training and test dataset")
+            model.add(Dense(1,activation='sigmoid'))
 
-            save_object(
-                file_path=self.model_trainer_config.trained_model_file_path,
-                obj = model
+            model.summary()
+
+            model.compile(optimizer='adam',loss='binary_crossentropy',metrics=['accuracy'])
+
+            early_stopping = EarlyStopping(monitor='val_loss', patience=5, restore_best_weights=True)
+            model.fit(
+                train_generator,
+                # steps_per_epoch=400,  # 2000 images = batch_size * steps
+                epochs=15,
+                validation_data=validation_generator,
+
+                callbacks=[early_stopping]
+                # validation_steps=125  # 1000 images = batch_size * steps
             )
 
-            # predicted = best_model.predict(X_test)
-
-            # r2_square = r2_score(y_test, predicted)
-
-            # return r2_square
-
+            # save_object(
+            #     file_path=self.model_trainer_config.trained_model_file_path,
+            #     obj = model
+            # )
+            model.save("artifacts/cats_dogs_classifier.h5")
         except Exception as E:
             raise CustomException(E, sys)
+
+# if __name__=="__main__":
+#     obj = ModelTrainer()
+#     data= obj.initiate_model_trainer()  
